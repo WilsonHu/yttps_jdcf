@@ -199,13 +199,13 @@
 		    },
 		    handleCurrentChange(val) {
 			    this.currentPage = val;
-			    this.onSelectUsers();
+			    this.onSearch();
 		    },
 		    search() {
-			    _this.onSelectUsers();
+			    _this.onSearch();
 		    },
 
-            onSelectUsers() {
+            onSearch() {
 			    _this.tableData = new Array();
 			    _this.loadingUI = true;
                 _this.filters.page = _this.currentPage;
@@ -263,7 +263,7 @@
 				    data: {"id":this.selectedItem.id},
 				    success: function (data) {
 					    if (data.code == 200) {
-							_this.onSelectUsers();
+							_this.onSearch();
 						    showMessage(_this, '删除成功', 1);
 					    } else {
 						    showMessage(_this, '删除失败', 0);
@@ -297,7 +297,7 @@
 					    data: {"customerName": _this.form.customerName},
 					    success: function (data) {
 						    if (data.code == 200) {
-							    _this.onSelectUsers();
+							    _this.onSearch();
                                 _this.addDialogVisible = false;
 							    showMessage(_this, '添加成功', 1);
 						    } else {
@@ -323,7 +323,7 @@
 					    success: function (data) {
 						    if (data.code == 200){
 							    _this.modifyDialogVisible = false;
-							    _this.onSelectUsers();
+							    _this.onSearch();
 							    showMessage(_this, '修改成功', 1);
 						    }else {
                                 _this.errorMsg = data.message;
@@ -350,7 +350,7 @@
 		    }
 	    },
 	    mounted: function () {
-		    this.onSelectUsers();
+		    this.onSearch();
 	    },
     }
 

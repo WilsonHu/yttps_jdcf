@@ -5,7 +5,7 @@ import com.eservice.iot.core.Service;
 /**
 * Class Description: xxx
 * @author Wilson Hu
-* @date 2018/12/26.
+* @date 2018/12/27.
 */
 public interface RecordService extends Service<Record> {
 

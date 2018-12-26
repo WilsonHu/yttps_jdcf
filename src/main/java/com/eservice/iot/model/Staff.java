@@ -11,7 +11,7 @@ import java.util.List;
  */
 public class Staff {
     @JsonProperty("tag_id_list")
-    private List<String> tagIdList;
+    private List<String> tag_id_list;
     @JsonProperty("upload_time")
     private Integer uploadTime;
     @JsonProperty("person_information")
@@ -23,16 +23,18 @@ public class Staff {
     @JsonProperty("meta")
     private String meta;
     @JsonProperty("scene_image_id")
-    private String sceneImageId;
+    private String scene_image_id;
     @JsonProperty("staff_id")
     private String staffId;
+    @JsonProperty("card_numbers")
+    private List<String> card_numbers;
 
     public List<String> getTag_id_list() {
-        return tagIdList;
+        return tag_id_list;
     }
 
-    public void setTagIdList(List<String> tagIdList) {
-        this.tagIdList = tagIdList;
+    public void setTag_id_list(List<String> tag_id_list) {
+        this.tag_id_list = tag_id_list;
     }
 
     public Integer getUploadTime() {
@@ -75,12 +77,12 @@ public class Staff {
         this.meta = meta;
     }
 
-    public String getSceneImageId() {
-        return sceneImageId;
+    public String getScene_image_id() {
+        return scene_image_id;
     }
 
-    public void setSceneImageId(String sceneImageId) {
-        this.sceneImageId = sceneImageId;
+    public void setScene_image_id(String scene_image_id) {
+        this.scene_image_id = scene_image_id;
     }
 
     public String getStaffId() {
@@ -89,6 +91,14 @@ public class Staff {
 
     public void setStaffId(String staffId) {
         this.staffId = staffId;
+    }
+
+    public List<String> getCard_numbers() {
+        return card_numbers;
+    }
+
+    public void setCard_numbers(List<String> card_numbers) {
+        this.card_numbers = card_numbers;
     }
 
     /**
@@ -100,11 +110,25 @@ public class Staff {
     public boolean equals(Object obj) {
         if (obj instanceof Staff) {
             Staff person = (Staff) obj;
-            return (person.personInformation.getName().equals(personInformation.getName())
-                        && person.personInformation.getPhone().equals(personInformation.getPhone()));
+            boolean same = true;
+            if(person.personInformation.getName() != null) {
+                if(!person.personInformation.getName().equals(personInformation.getName())) {
+                    same = false;
+                }
+            }
+            if(same && (person.personInformation.getPhone() != null) ) {
+                if(!person.personInformation.getPhone().equals(personInformation.getPhone())) {
+                    same = false;
+                }
+            }
+            if(same && (person.personInformation.getId() != null) ) {
+                if(!person.personInformation.getId().equals(personInformation.getId())) {
+                    same = false;
+                }
+            }
+            return same;
         } else {
             return super.equals(obj);
-
         }
     }
 }

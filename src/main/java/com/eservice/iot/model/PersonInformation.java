@@ -34,6 +34,9 @@ public class PersonInformation {
     private Long visit_start_timestamp;
     @JsonProperty("visit_time_type")
     private String visit_time_type;
+    @JsonProperty("card_no")
+    private String card_no;
+
 
     public String getBirthday() {
         return birthday;
@@ -137,5 +140,13 @@ public class PersonInformation {
 
     public void setVisit_time_type(String visitTimeType) {
         this.visit_time_type = visitTimeType;
+    }
+
+    public String getCard_no() {
+        return card_no;
+    }
+
+    public void setCard_no(String card_no) {
+        this.card_no = card_no;
     }
 }

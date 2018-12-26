@@ -22,6 +22,7 @@ import org.springframework.web.client.RestTemplate;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 
 /**
@@ -218,6 +219,18 @@ public class TagService {
             }
         }
         return name;
+    }
+
+    public String tagIdToName(List<String> ids) {
+        String result = "";
+        for (int i = 0; i < ids.size(); i++) {
+            if(i != ids.size() -1) {
+                result += getTagNameById(ids.get(i)) + "/";
+            } else {
+                result += getTagNameById(ids.get(i));
+            }
+        }
+        return result;
     }
 
     public ArrayList<String> getSignInTagIdList() {

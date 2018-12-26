@@ -10,5 +10,25 @@
     <id column="staff_id" jdbcType="VARCHAR" property="staffId" />
     <result column="name" jdbcType="VARCHAR" property="name" />
     <result column="department" jdbcType="VARCHAR" property="department" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
   </resultMap>
+  <select id="searchRecord" resultMap="BaseResultMap">
+    select * from record r
+    where 1 = 1
+    <if test="name != null and name != '' ">
+      and r.name like CONCAT('%','${name}','%' )
+    </if>
+    <if test="department!=null and department != '' ">
+      and r.department like CONCAT('%','${department}','%' )
+    </if>
+    <!-- 查询 建立时间create_time在传入的参数 query_start_time 和 query_finish_time 之间的记录 -->
+    <if test="query_start_time!=null and query_start_time!=''">
+      AND r.record_time &gt;= #{query_start_time}
+    </if>
+    <if test="query_finish_time!=null and query_finish_time!=''">
+      AND r.record_time &lt;= #{query_finish_time}
+    </if>
+    ORDER BY r.record_time DESC
+
+  </select>
 </mapper>

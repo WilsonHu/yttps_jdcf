@@ -85,6 +85,9 @@ public class StaffService {
     @Resource
     private PolicyService policyService;
 
+    @Resource
+    private RecordService recordService;
+
     private ThreadPoolTaskExecutor mExecutor;
 
     /**
@@ -212,7 +215,6 @@ public class StaffService {
 
     private void processStaffSignInResponse(ArrayList<VisitRecord> records, boolean initial) {
         Collections.reverse(records);
-        ArrayList<Record> insertList = new ArrayList<>();
         for (VisitRecord visitRecord : records) {
             if (((long) visitRecord.getTimestamp() * 1000) >= Util.formatAttendanceTime(ATTENDANCE_BEGIN_TIME).getTime()
                     && ((long) visitRecord.getTimestamp() * 1000) <= Util.formatAttendanceTime(ATTENDANCE_END_TIME).getTime()
@@ -227,9 +229,6 @@ public class StaffService {
                             break;
                         }
                     }
-                    if(!exist) {
-                        morningSignList.add(visitRecord);
-                    }
                 } else if (visitRecord.getTimestamp() * 1000 >= Util.formatAttendanceTime(MORNING_AFTERNOON_TIME).getTime()
                         && visitRecord.getTimestamp() * 1000 < Util.formatAttendanceTime(AFTERNOON_EVENING_TIME).getTime()) {
                     for (int i = afternoonSignList.size() - 1; i >= 0; i--) {
@@ -240,9 +239,6 @@ public class StaffService {
                             break;
                         }
                     }
-                    if(!exist) {
-                        afternoonSignList.add(visitRecord);
-                    }
                 } else {
                     for (int i = eveningSignList.size() - 1; i >= 0; i--) {
                         PersonInformation personInformation = eveningSignList.get(i).getPerson().getPerson_information();
@@ -252,32 +248,25 @@ public class StaffService {
                             break;
                         }
                     }
-                    if(!exist) {
-                        eveningSignList.add(visitRecord);
-                    }
                 }
                 if(!exist) {
                     Record record = new Record();
                     record.setName(visitRecord.getPerson().getPerson_information().getName());
                     record.setDepartment(getDepartmentName(visitRecord));
-                    record.setStaffId(visitRecord.getPerson().getPerson_id());
-                    record.setRecordTime(new Date(visitRecord.getTimestamp() * 1000));
-                    insertList.add(record);
-                }
-
-            }
-
-            //建立线程池,插入数据库
-            if (insertList.size() > 0) {
-                if (mExecutor == null) {
-                    initExecutor();
-                }
-                mExecutor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        //TODO:
+                    record.setStaffId(visitRecord.getPerson().getPerson_information().getId());
+                    record.setRecordTime(new Date(visitRecord.getTimestamp() * 1000L));
+                    record.setCreateTime(new Date());
+                    recordService.save(record);
+                    if(visitRecord.getTimestamp() * 1000 < Util.formatAttendanceTime(MORNING_AFTERNOON_TIME).getTime()) {
+                        morningSignList.add(visitRecord);
+                    } else if(visitRecord.getTimestamp() * 1000 >= Util.formatAttendanceTime(MORNING_AFTERNOON_TIME).getTime()
+                            && visitRecord.getTimestamp() * 1000 < Util.formatAttendanceTime(AFTERNOON_EVENING_TIME).getTime()) {
+                        afternoonSignList.add(visitRecord);
+                    } else {
+                        eveningSignList.add(visitRecord);
                     }
-                });
+                }
+
             }
         }
     }
@@ -299,9 +288,9 @@ public class StaffService {
         }
         postParameters.put("end_timestamp", queryEndTime);
         //只获取员工数据
-        ArrayList<String> identity = new ArrayList<>();
-        identity.add("STAFF");
-        postParameters.put("identity_list", identity);
+//        ArrayList<String> identity = new ArrayList<>();
+//        identity.add("VISITOR");
+//        postParameters.put("identity_list", identity);
         //只获取指定考勤设备的过人记录
         postParameters.put("device_id_list", policyService.getmPolicyDevices());
         ///只获取指定考勤tag的过人记录
@@ -312,7 +301,7 @@ public class StaffService {
         headers.add(HttpHeaders.AUTHORIZATION, token);
         HttpEntity httpEntity = new HttpEntity<>(JSON.toJSONString(postParameters), headers);
         try {
-            ResponseEntity<String> responseEntity = restTemplate.postForEntity(PARK_BASE_URL + "/visit_record/query", httpEntity, String.class);
+            ResponseEntity<String> responseEntity = restTemplate.postForEntity(PARK_BASE_URL + "/access/record", httpEntity, String.class);
             if (responseEntity.getStatusCodeValue() == ResponseCode.OK) {
                 String body = responseEntity.getBody();
                 if (body != null) {
@@ -335,6 +324,39 @@ public class StaffService {
                 querySignInStaff(startTime);
             }
         }
+    }
+
+    public boolean deleteStaff(String id) {
+        boolean success = false;
+        if (token == null && tokenService != null) {
+            token = tokenService.getToken();
+        }
+        if (token != null) {
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.ACCEPT, "application/json");
+            headers.add("Authorization", token);
+            HttpEntity entity = new HttpEntity(headers);
+            try {
+                ResponseEntity<String> responseEntity = restTemplate.exchange(PARK_BASE_URL + "/staffs/" + id, HttpMethod.DELETE, entity, String.class);
+                if (responseEntity.getStatusCodeValue() == ResponseCode.OK) {
+                    String body = responseEntity.getBody();
+                    if (body != null) {
+                        ResponseModel responseModel = JSONObject.parseObject(body, ResponseModel.class);
+                        if(responseModel != null && responseModel.getRtn() == 0) {
+                            success = true;
+                        }
+                    }
+                }
+            } catch (HttpClientErrorException exception) {
+                if (exception.getStatusCode().value() == ResponseCode.TOKEN_INVALID) {
+                    token = tokenService.getToken();
+                    if (token != null) {
+                        deleteStaff(id);
+                    }
+                }
+            }
+        }
+        return success;
     }
 
     private void initExecutor() {

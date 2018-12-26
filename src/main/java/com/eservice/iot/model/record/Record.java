@@ -14,14 +14,12 @@ public class Record {
     /**
      * 记录时间
      */
-    @Id
     @Column(name = "record_time")
     private Date recordTime;
 
     /**
      * 员工号
      */
-    @Id
     @Column(name = "staff_id")
     private String staffId;
 
@@ -34,6 +32,12 @@ public class Record {
      * 部门名称
      */
     private String department;
+
+    /**
+     * 数据库中生成的时间
+     */
+    @Column(name = "create_time")
+    private Date createTime;
 
     /**
      * 获取自增ID
@@ -123,5 +127,23 @@ public class Record {
      */
     public void setDepartment(String department) {
         this.department = department;
+    }
+
+    /**
+     * 获取数据库中生成的时间
+     *
+     * @return create_time - 数据库中生成的时间
+     */
+    public Date getCreateTime() {
+        return createTime;
+    }
+
+    /**
+     * 设置数据库中生成的时间
+     *
+     * @param createTime 数据库中生成的时间
+     */
+    public void setCreateTime(Date createTime) {
+        this.createTime = createTime;
     }
 }
