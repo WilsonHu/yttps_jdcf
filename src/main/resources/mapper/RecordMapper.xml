@@ -12,6 +12,11 @@
     <result column="department" jdbcType="VARCHAR" property="department" />
     <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
   </resultMap>
+
+  <resultMap id="Statistic" type="com.eservice.iot.model.record.Statistic" extends="BaseResultMap">
+    <id column="number" jdbcType="INTEGER" property="number" />
+  </resultMap>
+
   <select id="searchRecord" resultMap="BaseResultMap">
     select * from record r
     where 1 = 1
@@ -29,6 +34,25 @@
       AND r.record_time &lt;= #{query_finish_time}
     </if>
     ORDER BY r.record_time DESC
+  </select>
 
+  <select id="statistic" resultMap="Statistic">
+    select r.*,COUNT(r.staff_id) AS number from record r
+    where 1 = 1
+    <if test="name != null and name != '' ">
+      and r.name like CONCAT('%','${name}','%' )
+    </if>
+    <if test="department!=null and department != '' ">
+      and r.department like CONCAT('%','${department}','%' )
+    </if>
+    <!-- 查询 建立时间create_time在传入的参数 query_start_time 和 query_finish_time 之间的记录 -->
+    <if test="query_start_time!=null and query_start_time!=''">
+      AND r.record_time &gt;= #{query_start_time}
+    </if>
+    <if test="query_finish_time!=null and query_finish_time!=''">
+      AND r.record_time &lt;= #{query_finish_time}
+    </if>
+    group by r.staff_id
+    order by r.record_time DESC
   </select>
 </mapper>

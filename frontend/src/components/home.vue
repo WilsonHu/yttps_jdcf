@@ -321,7 +321,7 @@
 </script>
 <style>
     .bg {
-        overflow-y: scroll;
+        overflow-y: hidden;
         height: 100%;
     }
 
