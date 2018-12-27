@@ -10,7 +10,7 @@ Target Server Type    : MYSQL
 Target Server Version : 50553
 File Encoding         : 65001
 
-Date: 2018-12-26 21:12:48
+Date: 2018-12-27 15:52:24
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -43,12 +43,16 @@ CREATE TABLE `record` (
   `staff_id` varchar(255) NOT NULL COMMENT '员工号',
   `department` varchar(255) DEFAULT NULL COMMENT '部门名称',
   `record_time` datetime NOT NULL COMMENT '记录时间',
-  PRIMARY KEY (`id`,`record_time`,`staff_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `create_time` datetime NOT NULL COMMENT '插入数据库时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UK_Record` (`staff_id`,`record_time`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 
 -- ----------------------------
 -- Records of record
 -- ----------------------------
+INSERT INTO `record` VALUES ('1', '胡通', '123', '信息技术部', '2018-12-27 08:07:52', '2018-12-27 10:07:23');
+INSERT INTO `record` VALUES ('2', '胡通', '123', '信息技术部', '2018-12-27 10:07:52', '2018-12-27 11:00:11');
 
 -- ----------------------------
 -- Table structure for `user`
