@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -256,7 +257,14 @@ public class StaffService {
                     record.setStaffId(visitRecord.getPerson().getPerson_information().getId());
                     record.setRecordTime(new Date(visitRecord.getTimestamp() * 1000L));
                     record.setCreateTime(new Date());
-                    recordService.save(record);
+                    try {
+                        recordService.save(record);
+                    } catch (DuplicateKeyException e) {
+                        logger.warn("插入重复 => 姓名：{}, 工号：{}, 刷脸时间：{}", record.getName(), record.getStaffId(), formatter.format(record.getRecordTime()));
+                    } catch (Exception e) {
+                        logger.warn("考勤记录插入异常 => 姓名：{}, 工号：{}, 刷脸时间：{}",record.getName(), record.getStaffId(), formatter.format(record.getRecordTime()));
+                        break;
+                    }
                     if(visitRecord.getTimestamp() * 1000 < Util.formatAttendanceTime(MORNING_AFTERNOON_TIME).getTime()) {
                         morningSignList.add(visitRecord);
                     } else if(visitRecord.getTimestamp() * 1000 >= Util.formatAttendanceTime(MORNING_AFTERNOON_TIME).getTime()
