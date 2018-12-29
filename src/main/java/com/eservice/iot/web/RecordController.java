@@ -1,4 +1,5 @@
 package com.eservice.iot.web;
+
 import com.eservice.iot.core.Result;
 import com.eservice.iot.core.ResultGenerator;
 import com.eservice.iot.model.record.Record;
@@ -7,12 +8,16 @@ import com.eservice.iot.service.impl.RecordServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import org.apache.poi.hssf.usermodel.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -26,6 +31,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/record")
 public class RecordController {
+    private final static Logger logger = LoggerFactory.getLogger(RecordController.class);
+
+    @Value("${excel_path}")
+    private String EXCEL_PATH;
     @Resource
     private RecordServiceImpl recordService;
     private SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
@@ -89,18 +98,24 @@ public class RecordController {
             HSSFSheet sheet = workbook.createSheet("刷卡统计");
 
             ///设置要导出的文件的名字
-            String fileName = "刷脸统计_" + formatter.format(new Date()) + ".xls";
+            String fileName = "statistic_" + formatter.format(new Date()) + ".xls";
             //新增数据行，并且设置单元格数据
             insertDataInSheet(sheet, list);
 
             try {
-                FileOutputStream out = new FileOutputStream("./src/main/resources/static/" + fileName);
+                File dir = new File(EXCEL_PATH);
+                if(!dir.exists()) {
+                    if(dir.mkdirs()) {
+                        logger.info("excel目录创建成功！");
+                    }
+                }
+                FileOutputStream out = new FileOutputStream(EXCEL_PATH + fileName);
                 workbook.write(out);
                 out.close();
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            return ResultGenerator.genSuccessResult("static/" + fileName);
+            return ResultGenerator.genSuccessResult(EXCEL_PATH + fileName);
         } else {
             return ResultGenerator.genFailResult("刷卡记录数为0");
         }
@@ -114,18 +129,24 @@ public class RecordController {
             HSSFSheet sheet = workbook.createSheet("刷脸记录");
 
             ///设置要导出的文件的名字
-            String fileName = "刷脸记录_" + formatter.format(new Date()) + ".xls";
+            String fileName = "records_" + formatter.format(new Date()) + ".xls";
             //新增数据行，并且设置单元格数据
             insertRecordDataInSheet(sheet, list);
 
             try {
-                FileOutputStream out = new FileOutputStream("./src/main/resources/static/" + fileName);
+                File dir = new File(EXCEL_PATH);
+                if(!dir.exists()) {
+                    if(dir.mkdirs()) {
+                        logger.info("excel目录创建成功！");
+                    }
+                }
+                FileOutputStream out = new FileOutputStream(EXCEL_PATH + fileName);
                 workbook.write(out);
                 out.close();
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            return ResultGenerator.genSuccessResult("static/" + fileName);
+            return ResultGenerator.genSuccessResult(EXCEL_PATH + fileName);
         } else {
             return ResultGenerator.genFailResult("刷卡记录数为0");
         }

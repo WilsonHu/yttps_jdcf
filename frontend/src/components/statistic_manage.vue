@@ -229,7 +229,7 @@
                     data: _this.filters,
                     success: function (data) {
                         if (data.code == 200) {
-                            downloadFile(HOST + data.data);
+                            downloadFile(EXCEL_URL + data.data.replace(".", ""));
                         }
                         _this.loadingUI = false;
                     },
