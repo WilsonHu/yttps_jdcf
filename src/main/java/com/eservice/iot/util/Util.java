@@ -147,4 +147,20 @@ public class Util {
         attendanceBegin.set(Calendar.MILLISECOND, 0);
         return attendanceBegin.getTime();
     }
+
+    /**
+     *
+     * @param first  秒
+     * @param second 秒
+     * @return
+     */
+    public static boolean isTheSameDay(int first, int second) {
+        Date firstDate = new Date(first * 1000L);
+        Date secondDate = new Date(second * 1000L);
+        if(firstDate.getYear() == secondDate.getYear() && firstDate.getDay() == secondDate.getDay()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

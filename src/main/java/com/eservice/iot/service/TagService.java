@@ -108,7 +108,7 @@ public class TagService {
                 headers.add("Authorization", token);
                 HttpEntity entity = new HttpEntity(headers);
                 try {
-                    ResponseEntity<String> responseEntity = restTemplate.exchange(PARK_BASE_URL + "/tags", HttpMethod.GET, entity, String.class);
+                    ResponseEntity<String> responseEntity = restTemplate.exchange(PARK_BASE_URL + "/tags?page=0&size=0", HttpMethod.GET, entity, String.class);
                     if (responseEntity.getStatusCodeValue() == ResponseCode.OK) {
                         String body = responseEntity.getBody();
                         if (body != null) {

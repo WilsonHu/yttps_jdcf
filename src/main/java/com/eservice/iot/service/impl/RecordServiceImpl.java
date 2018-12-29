@@ -31,4 +31,8 @@ public class RecordServiceImpl extends AbstractService<Record> implements Record
         return recordMapper.statistic(name, department,query_start_time, query_finish_time);
     }
 
+    public Record getLatestRecord() {
+        return recordMapper.getLatestRecord();
+    }
+
 }

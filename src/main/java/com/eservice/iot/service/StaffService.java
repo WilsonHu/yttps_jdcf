@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.eservice.iot.model.*;
 import com.eservice.iot.model.record.Record;
+import com.eservice.iot.service.impl.RecordServiceImpl;
 import com.eservice.iot.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,8 @@ import org.springframework.web.client.RestTemplate;
 import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
 import java.util.*;
+
+import static com.eservice.iot.util.Util.isTheSameDay;
 
 
 /**
@@ -87,7 +90,7 @@ public class StaffService {
     private PolicyService policyService;
 
     @Resource
-    private RecordService recordService;
+    private RecordServiceImpl recordService;
 
     private ThreadPoolTaskExecutor mExecutor;
 
@@ -99,7 +102,6 @@ public class StaffService {
 
     public StaffService() {
         //准备初始数据，此时获取到考勤列表后不去通知钉钉，初始化开始查询时间
-        queryStartTime = Util.getDateStartTime().getTime() / 1000;
     }
 
     /**
@@ -108,7 +110,7 @@ public class StaffService {
     @Scheduled(initialDelay = 5000, fixedRate = 1000)
     public void fetchSignInScheduled() {
         ///当员工列表数为0，或者已全部签核完成,以及当前处于程序初始化状态情况下，可以跳过不再去获取考勤数据
-        boolean skip = staffList.size() <= 0 || tagService == null || !tagService.isTagInitialFinished();
+        boolean skip = staffList.size() <= 0 || tagService == null || !tagService.isTagInitialFinished() || recordService == null;
         if (skip) {
             return;
         }
@@ -116,7 +118,15 @@ public class StaffService {
             token = tokenService.getToken();
         }
         if (token != null) {
-            querySignInStaff(queryStartTime);
+            if(queryStartTime == 0) {
+                //先获取记录获取的开始时间
+                Record record = recordService.getLatestRecord();
+                if(record != null) {
+                    queryStartTime = record.getRecordTime().getTime()/1000;
+                }
+            } else {
+                querySignInStaff(queryStartTime);
+            }
         }
     }
 
@@ -217,34 +227,42 @@ public class StaffService {
     private void processStaffSignInResponse(ArrayList<VisitRecord> records, boolean initial) {
         Collections.reverse(records);
         for (VisitRecord visitRecord : records) {
-            if (((long) visitRecord.getTimestamp() * 1000) >= Util.formatAttendanceTime(ATTENDANCE_BEGIN_TIME).getTime()
-                    && ((long) visitRecord.getTimestamp() * 1000) <= Util.formatAttendanceTime(ATTENDANCE_END_TIME).getTime()
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTimeInMillis(visitRecord.getTimestamp() * 1000L);
+            int hourOfDate = calendar.get(Calendar.HOUR_OF_DAY);
+            //只获有效时间段的记录，目前是凌晨两点至晚上十点
+            if (hourOfDate >= Util.formatAttendanceTime(ATTENDANCE_BEGIN_TIME).getHours()
+                    && hourOfDate <= Util.formatAttendanceTime(ATTENDANCE_END_TIME).getHours()
                     && visitRecord.isIs_pass()) {
                 boolean exist = false;
-                if (visitRecord.getTimestamp() * 1000 < Util.formatAttendanceTime(MORNING_AFTERNOON_TIME).getTime()) {
+                if (hourOfDate < Util.formatAttendanceTime(MORNING_AFTERNOON_TIME).getHours()) {
                     for (int i = morningSignList.size() - 1; i >= 0; i--) {
-                        PersonInformation personInformation = morningSignList.get(i).getPerson().getPerson_information();
-                        if (personInformation.getName().equals(visitRecord.getPerson().getPerson_information().getName())
-                            && personInformation.getId().equals(visitRecord.getPerson().getPerson_information().getId())) {
+                        VisitRecord record = morningSignList.get(i);
+                        //同一天的早上，一个人只能存在一条记录
+                        if (record.getPerson().getPerson_information().getName().equals(visitRecord.getPerson().getPerson_information().getName())
+                            && record.getPerson().getPerson_information().getId().equals(visitRecord.getPerson().getPerson_information().getId())
+                            && isTheSameDay(record.getTimestamp(),visitRecord.getTimestamp())) {
                             exist = true;
                             break;
                         }
                     }
-                } else if (visitRecord.getTimestamp() * 1000 >= Util.formatAttendanceTime(MORNING_AFTERNOON_TIME).getTime()
-                        && visitRecord.getTimestamp() * 1000 < Util.formatAttendanceTime(AFTERNOON_EVENING_TIME).getTime()) {
+                } else if (hourOfDate >= Util.formatAttendanceTime(MORNING_AFTERNOON_TIME).getHours()
+                        && hourOfDate < Util.formatAttendanceTime(AFTERNOON_EVENING_TIME).getHours()) {
                     for (int i = afternoonSignList.size() - 1; i >= 0; i--) {
-                        PersonInformation personInformation = afternoonSignList.get(i).getPerson().getPerson_information();
-                        if (personInformation.getName().equals(visitRecord.getPerson().getPerson_information().getName())
-                                && personInformation.getId().equals(visitRecord.getPerson().getPerson_information().getId())) {
+                        VisitRecord record = afternoonSignList.get(i);
+                        if (record.getPerson().getPerson_information().getName().equals(visitRecord.getPerson().getPerson_information().getName())
+                                && record.getPerson().getPerson_information().getId().equals(visitRecord.getPerson().getPerson_information().getId())
+                                && isTheSameDay(record.getTimestamp(),visitRecord.getTimestamp())) {
                             exist = true;
                             break;
                         }
                     }
                 } else {
                     for (int i = eveningSignList.size() - 1; i >= 0; i--) {
-                        PersonInformation personInformation = eveningSignList.get(i).getPerson().getPerson_information();
-                        if (personInformation.getName().equals(visitRecord.getPerson().getPerson_information().getName())
-                                && personInformation.getId().equals(visitRecord.getPerson().getPerson_information().getId())) {
+                        VisitRecord record = eveningSignList.get(i);
+                        if (record.getPerson().getPerson_information().getName().equals(visitRecord.getPerson().getPerson_information().getName())
+                                && record.getPerson().getPerson_information().getId().equals(visitRecord.getPerson().getPerson_information().getId())
+                                && isTheSameDay(record.getTimestamp(),visitRecord.getTimestamp())) {
                             exist = true;
                             break;
                         }
@@ -265,10 +283,10 @@ public class StaffService {
                         logger.warn("考勤记录插入异常 => 姓名：{}, 工号：{}, 刷脸时间：{}",record.getName(), record.getStaffId(), formatter.format(record.getRecordTime()));
                         break;
                     }
-                    if(visitRecord.getTimestamp() * 1000 < Util.formatAttendanceTime(MORNING_AFTERNOON_TIME).getTime()) {
+                    if(hourOfDate < Util.formatAttendanceTime(MORNING_AFTERNOON_TIME).getHours()) {
                         morningSignList.add(visitRecord);
-                    } else if(visitRecord.getTimestamp() * 1000 >= Util.formatAttendanceTime(MORNING_AFTERNOON_TIME).getTime()
-                            && visitRecord.getTimestamp() * 1000 < Util.formatAttendanceTime(AFTERNOON_EVENING_TIME).getTime()) {
+                    } else if(hourOfDate >= Util.formatAttendanceTime(MORNING_AFTERNOON_TIME).getHours()
+                            && hourOfDate < Util.formatAttendanceTime(AFTERNOON_EVENING_TIME).getHours()) {
                         afternoonSignList.add(visitRecord);
                     } else {
                         eveningSignList.add(visitRecord);
@@ -289,11 +307,11 @@ public class StaffService {
 //        ///考勤记录查询结束时间
         Long queryEndTime = System.currentTimeMillis() / 1000;
         //重启状态
-        if (startTime == Util.getDateStartTime().getTime() / 1000) {
-            if (queryEndTime > Util.formatAttendanceTime(ATTENDANCE_END_TIME).getTime() / 1000) {
-                queryEndTime = Util.formatAttendanceTime(ATTENDANCE_END_TIME).getTime() / 1000;
-            }
-        }
+//        if (startTime == Util.getDateStartTime().getTime() / 1000) {
+//            if (queryEndTime > Util.formatAttendanceTime(ATTENDANCE_END_TIME).getTime() / 1000) {
+//                queryEndTime = Util.formatAttendanceTime(ATTENDANCE_END_TIME).getTime() / 1000;
+//            }
+//        }
         postParameters.put("end_timestamp", queryEndTime);
         //只获取员工数据
 //        ArrayList<String> identity = new ArrayList<>();
