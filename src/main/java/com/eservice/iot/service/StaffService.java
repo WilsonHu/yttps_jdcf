@@ -46,11 +46,11 @@ public class StaffService {
     @Value("${attendance_end_time}")
     private int ATTENDANCE_END_TIME;
 
-    @Value("${morning_afternoon_time}")
-    private int MORNING_AFTERNOON_TIME;
+    @Value("${afternoon_end_time}")
+    private int AFTERNOON_END_TIME;
 
-    @Value("${afternoon_evening_time}")
-    private int AFTERNOON_EVENING_TIME;
+    @Value("${evening_begin_time}")
+    private int EVENING_BEGIN_TIME;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -235,19 +235,19 @@ public class StaffService {
                     && hourOfDate <= Util.formatAttendanceTime(ATTENDANCE_END_TIME).getHours()
                     && visitRecord.isIs_pass()) {
                 boolean exist = false;
-                if (hourOfDate < Util.formatAttendanceTime(MORNING_AFTERNOON_TIME).getHours()) {
-                    for (int i = morningSignList.size() - 1; i >= 0; i--) {
-                        VisitRecord record = morningSignList.get(i);
-                        //同一天的早上，一个人只能存在一条记录
-                        if (record.getPerson().getPerson_information().getName().equals(visitRecord.getPerson().getPerson_information().getName())
-                            && record.getPerson().getPerson_information().getId().equals(visitRecord.getPerson().getPerson_information().getId())
-                            && isTheSameDay(record.getTimestamp(),visitRecord.getTimestamp())) {
-                            exist = true;
-                            break;
-                        }
-                    }
-                } else if (hourOfDate >= Util.formatAttendanceTime(MORNING_AFTERNOON_TIME).getHours()
-                        && hourOfDate < Util.formatAttendanceTime(AFTERNOON_EVENING_TIME).getHours()) {
+//                if (hourOfDate < Util.formatAttendanceTime(MORNING_AFTERNOON_TIME).getHours()) {
+//                    for (int i = morningSignList.size() - 1; i >= 0; i--) {
+//                        VisitRecord record = morningSignList.get(i);
+//                        //同一天的早上，一个人只能存在一条记录
+//                        if (record.getPerson().getPerson_information().getName().equals(visitRecord.getPerson().getPerson_information().getName())
+//                            && record.getPerson().getPerson_information().getId().equals(visitRecord.getPerson().getPerson_information().getId())
+//                            && isTheSameDay(record.getTimestamp(),visitRecord.getTimestamp())) {
+//                            exist = true;
+//                            break;
+//                        }
+//                    }
+//                } else
+                if (hourOfDate <= Util.formatAttendanceTime(AFTERNOON_END_TIME).getHours()) {
                     for (int i = afternoonSignList.size() - 1; i >= 0; i--) {
                         VisitRecord record = afternoonSignList.get(i);
                         if (record.getPerson().getPerson_information().getName().equals(visitRecord.getPerson().getPerson_information().getName())
@@ -257,7 +257,7 @@ public class StaffService {
                             break;
                         }
                     }
-                } else {
+                } else if(hourOfDate >= Util.formatAttendanceTime(EVENING_BEGIN_TIME).getHours()){
                     for (int i = eveningSignList.size() - 1; i >= 0; i--) {
                         VisitRecord record = eveningSignList.get(i);
                         if (record.getPerson().getPerson_information().getName().equals(visitRecord.getPerson().getPerson_information().getName())
@@ -283,10 +283,10 @@ public class StaffService {
                         logger.warn("考勤记录插入异常 => 姓名：{}, 工号：{}, 刷脸时间：{}",record.getName(), record.getStaffId(), formatter.format(record.getRecordTime()));
                         break;
                     }
-                    if(hourOfDate < Util.formatAttendanceTime(MORNING_AFTERNOON_TIME).getHours()) {
-                        morningSignList.add(visitRecord);
-                    } else if(hourOfDate >= Util.formatAttendanceTime(MORNING_AFTERNOON_TIME).getHours()
-                            && hourOfDate < Util.formatAttendanceTime(AFTERNOON_EVENING_TIME).getHours()) {
+//                    if(hourOfDate < Util.formatAttendanceTime(MORNING_AFTERNOON_TIME).getHours()) {
+//                        morningSignList.add(visitRecord);
+//                    } else
+                    if(hourOfDate <= Util.formatAttendanceTime(AFTERNOON_END_TIME).getHours()) {
                         afternoonSignList.add(visitRecord);
                     } else {
                         eveningSignList.add(visitRecord);
